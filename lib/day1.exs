@@ -6,7 +6,7 @@ defmodule Day1 do
     |> String.split("\n")
     |> Enum.map(&Integer.parse/1)
     # parse returns a tuple containing leftover binary, discard that
-    |> Enum.map(&elem(&1, 0))
+    |> Enum.map(fn {i, ""} -> i end)
   end
 
   def part1() do
