@@ -23,22 +23,24 @@ defmodule Day10 do
   def validate(chars, stack \\ nil)
   def validate(chars, nil), do: validate(chars, [])
 
+  # No characters left, and no expected close brackets
   def validate([], []), do: {:ok, nil}
+
+  # No characters left, but some expected close brackets
   def validate([], stack), do: {:incomplete, stack}
 
-  def validate([this_char | rest_chars], stack) do
-    cond do
-      this_char in ["(", "<", "[", "{"] ->
-        validate(rest_chars, [reverse_bracket(this_char)] ++ stack)
+  # Open bracket
+  def validate([this_char | rest_chars], stack) when this_char in ["(", "<", "[", "{"] do
+    validate(rest_chars, [reverse_bracket(this_char)] ++ stack)
+  end
 
-      this_char in [")", ">", "]", "}"] ->
-        [expected_match | rest_stack] = stack
-        if expected_match == this_char do
-          # Valid
-          validate(rest_chars, rest_stack)
-        else
-          {:corrupted, this_char}
-        end
+  # Close bracket
+  def validate([this_char | rest_chars], [expected_match | rest_stack]) when this_char in [")", ">", "]", "}"] do
+    if expected_match == this_char do
+      # Valid
+      validate(rest_chars, rest_stack)
+    else
+      {:corrupted, this_char}
     end
   end
 
