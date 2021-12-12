@@ -30,22 +30,22 @@ defmodule Day12 do
   def explore_routes(map, from \\ "start",  one_small_cave_twice \\ false, small_caves_visits \\ %{})
   def explore_routes(_, "end", _, _), do: [["end"]]
   def explore_routes(map, from, one_small_cave_twice, small_caves_visits) do
-    # Explore each possible path from here, unless it's a small cave we already visited
+    # Work out the visit limit right now
+    visit_limit =
+      cond do
+        # We're allowed to visit one small cave twice, but already did - limit 1
+        one_small_cave_twice && Enum.any?(small_caves_visits, fn {_, count} -> count > 1 end) -> 1
+
+        # We're allowed to visit one small cave twice, but haven't yet - limit 2
+        one_small_cave_twice -> 2
+
+        # We're only allowed to visit each small cave once - limit 1
+        true -> 1
+      end
+
+    # Explore each possible path from here, which is allowed by the visit limit
     Map.get(map, from)
     |> Enum.filter(fn cave ->
-      # Work out the visit limit right now
-      visit_limit =
-        cond do
-          # We're allowed to visit one small cave twice, but already did - limit 1
-          one_small_cave_twice && Enum.any?(small_caves_visits, fn {_, count} -> count > 1 end) -> 1
-
-          # We're allowed to visit one small cave twice, but haven't yet - limit 2
-          one_small_cave_twice -> 2
-
-          # We're only allowed to visit each small cave once - limit 1
-          true -> 1
-        end
-
       # Never allowed to visit start twice...
       cave != "start"
       # ...and can't exceed the visit limit
