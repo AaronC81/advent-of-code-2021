@@ -34,19 +34,17 @@ defmodule Day12 do
     Map.get(map, from)
     |> Enum.filter(fn cave ->
       # Work out the visit limit right now
-      visit_limit = if one_small_cave_twice do
-        # Has a small cave been visited twice yet?
-        if Enum.any?(small_caves_visits, fn {_, count} -> count > 1 end) do
-          # Yes - only one visit allowed for all future caves
-          1
-        else
-          # No - allowed to visit this once or twice
-          2
+      visit_limit =
+        cond do
+          # We're allowed to visit one small cave twice, but already did - limit 1
+          one_small_cave_twice && Enum.any?(small_caves_visits, fn {_, count} -> count > 1 end) -> 1
+
+          # We're allowed to visit one small cave twice, but haven't yet - limit 2
+          one_small_cave_twice -> 2
+
+          # We're only allowed to visit each small cave once - limit 1
+          true -> 1
         end
-      else
-        # Only one visit to a small cave allowed
-        1
-      end
 
       # Never allowed to visit start twice...
       cave != "start"
