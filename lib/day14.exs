@@ -17,19 +17,53 @@ defmodule Day14 do
       end)
       |> Map.new
 
-    {template, rules}
+    # Build a map of pairs to counts for the template
+    # Just a raw list is far too inefficient for large numbers of pair insertions
+    template_pairs = Enum.chunk_every(template, 2, 1, :discard)
+    template_map =
+      Map.keys(rules)
+      |> Enum.map(fn pair -> {pair, Enum.count(template_pairs, & &1 == pair)} end)
+      |> Map.new()
+
+    # Also build a map of individual elements to their counts
+    template_elements = Enum.frequencies(template)
+
+    {{template_map, template_elements}, rules}
   end
 
-  def pair_insertion(polymer, rules) do
-    # Iterate over each pair of elements in the polymer, but also keep the last element on its own
-    #   e.g. [["N", "N"], ..., ["B"]]
-    Enum.chunk_every(polymer, 2, 1)
-    # Look up in rules and insert in middle
-    # The end of one pair is the start of the next, so we don't duplicate them
-    |> Enum.flat_map(fn
-      [a, b] -> [a, rules[[a, b]]]
-      [b] -> [b]
-    end)
+  def pair_insertion({pair_counts, element_counts}, rules) do
+    # From the AoC example, NNCB becomes NCNBCHB
+    #
+    # The rule NN -> C means that NN produces NC and CN
+    # The rule NC -> B means that NC produces NB and BC
+    # The rule CB -> H means that CB produces CH and HB
+    #
+    # The pattern is that AB -> C produces AC and CB
+
+    Enum.reduce(
+      # For each pair and count...
+      pair_counts,
+
+      # ...build a new pair count map and element count map...
+      {%{}, element_counts},
+
+      # ...by adding both pairs produced from insertion onto the map keys, and adding to the element
+      # count for the middle element
+      fn {pair, count}, {new_pair_counts, new_element_counts} ->
+        middle = rules[pair]
+        [a, b] = pair
+
+        new_pair_1 = [a, middle]
+        new_pair_2 = [middle, b]
+
+        {
+          Map.update(new_pair_counts, new_pair_1, count, & &1 + count)
+          |> Map.update(new_pair_2, count, & &1 + count),
+
+          Map.update(new_element_counts, middle, 0, & &1 + count)
+        }
+      end
+    )
   end
 
   def pair_insertions(polymer, rules, count) do
@@ -39,10 +73,9 @@ defmodule Day14 do
     end)
   end
 
-  def most_least_diff(polymer) do
-    occurrences = Enum.frequencies_by(polymer, & &1)
-    most = occurrences |> Map.values |> Enum.max
-    least = occurrences |> Map.values |> Enum.min
+  def most_least_diff({_, element_counts}) do
+    most = Map.values(element_counts) |> Enum.max
+    least = Map.values(element_counts) |> Enum.min
 
     most - least
   end
